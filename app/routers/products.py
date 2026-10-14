@@ -1,15 +1,24 @@
-"""CRUD de productos. Escritura restringida a administradores."""
+"""CRUD de productos. Escritura restringida a administradores.
+
+Incluye caché de lecturas: la primera petición calcula y guarda en caché;
+las siguientes (dentro del TTL) responden desde ahí. Las escrituras
+invalidan la caché para no servir datos obsoletos.
+"""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.cache import cache
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_admin
 from app.models import Product, User
 from app.schemas.product import ProductCreate, ProductRead, ProductUpdate
 
 router = APIRouter(prefix="/products", tags=["products"])
+
+_CACHE_PREFIX = "products:"
 
 
 @router.get("/", response_model=list[ProductRead])
@@ -18,12 +27,23 @@ def list_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     q: str | None = Query(None, description="Buscar por nombre"),
-) -> list[Product]:
+):
+    cache_key = f"{_CACHE_PREFIX}list:{skip}:{limit}:{q or ''}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     stmt = select(Product).where(Product.is_active.is_(True))
     if q:
         stmt = stmt.where(Product.name.ilike(f"%{q}%"))
     stmt = stmt.offset(skip).limit(limit)
-    return list(db.scalars(stmt))
+    products = list(db.scalars(stmt))
+
+    result = [
+        ProductRead.model_validate(p).model_dump(mode="json") for p in products
+    ]
+    cache.set(cache_key, result, ttl=settings.CACHE_TTL_SECONDS)
+    return result
 
 
 @router.get("/{product_id}", response_model=ProductRead)
@@ -44,6 +64,7 @@ def create_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+    cache.delete_prefix(_CACHE_PREFIX)  # invalida listados cacheados
     return product
 
 
@@ -58,11 +79,11 @@ def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
 
-    # exclude_unset: solo actualiza los campos que llegaron en el request.
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(product, field, value)
     db.commit()
     db.refresh(product)
+    cache.delete_prefix(_CACHE_PREFIX)
     return product
 
 
@@ -77,3 +98,4 @@ def delete_product(
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     product.is_active = False  # soft delete: no borramos el histórico
     db.commit()
+    cache.delete_prefix(_CACHE_PREFIX)

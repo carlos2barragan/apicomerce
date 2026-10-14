@@ -2,13 +2,14 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import Order, OrderItem, Product, User
+from app.notifications import send_order_confirmation
 from app.schemas.order import OrderCreate, OrderRead
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 @router.post("/", response_model=OrderRead, status_code=status.HTTP_201_CREATED)
 def create_order(
     payload: OrderCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Order:
@@ -50,6 +52,11 @@ def create_order(
     db.add(order)
     db.commit()
     db.refresh(order)
+
+    # El correo se envía DESPUÉS de responder al cliente (no bloquea la petición).
+    background_tasks.add_task(
+        send_order_confirmation, current_user.email, order.id, str(order.total)
+    )
     return order
 
 

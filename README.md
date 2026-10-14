@@ -94,6 +94,31 @@ docker compose up --build
 pytest -v
 ```
 
+### Salud, métricas y analítica
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/health/live` | Liveness (¿el proceso vive?) |
+| GET | `/health/ready` | Readiness (¿la BD responde?) |
+| GET | `/metrics` | Métricas en formato Prometheus |
+| GET | `/analytics/summary` | Resumen de ventas (solo admin) |
+
+## Capacidades de producción
+
+- **Caché**: las lecturas de `/products` se cachean (Redis si hay `REDIS_URL`,
+  si no en memoria). Las escrituras invalidan la caché. TTL configurable con
+  `CACHE_TTL_SECONDS`.
+- **Rate limiting**: máximo de peticiones por IP por minuto
+  (`RATE_LIMIT_PER_MINUTE`, por defecto 120). Devuelve `429` al pasarse.
+- **Observabilidad**: logs **JSON** con `request_id` único por petición, headers
+  `X-Request-ID` y `X-Process-Time-ms`, contadores e histograma de latencia en
+  `/metrics`.
+- **Health checks**: `/health/live` y `/health/ready` para orquestadores
+  (Kubernetes, Render).
+- **Tareas en background**: al crear una orden se encola el correo de
+  confirmación con `BackgroundTasks` (no bloquea la respuesta).
+- **Analítica**: `/analytics/summary` usa agregaciones SQL (`COUNT`, `SUM`,
+  `GROUP BY`, `JOIN`). Es la base perfecta para exponer "tools" a un agente LLM.
+
 ## Usuario de ejemplo
 
 - Email: `admin@demo.com`
