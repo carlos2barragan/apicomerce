@@ -1,0 +1,23 @@
+# Blueprint de Render: base de datos PostgreSQL + servicio web (Docker).
+# Al conectar este repo en Render, se crea todo automáticamente.
+databases:
+  - name: ecommerce-db
+    databaseName: ecommerce
+    user: ecommerce
+    plan: free
+
+services:
+  - type: web
+    name: ecommerce-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ecommerce-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
