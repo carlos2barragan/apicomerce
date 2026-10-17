@@ -12,7 +12,16 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Monitor 27\"",
+                "description": "Monitor IPS 1440p",
+                "price": "420.00",
+                "stock": 15,
+            }
+        }
+    )
 
 
 class ProductUpdate(BaseModel):
@@ -21,6 +30,10 @@ class ProductUpdate(BaseModel):
     price: Decimal | None = Field(default=None, gt=0)
     stock: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"price": "399.99", "stock": 25}}
+    )
 
 
 class ProductRead(ProductBase):

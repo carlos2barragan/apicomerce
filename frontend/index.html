@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecommerce API · Panel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ============ VISTA: LOGIN ============ -->
+  <div id="login-view" class="login-wrap hidden">
+    <div class="card login-card">
+      <span class="brand">Ecommerce Panel</span>
+      <p class="muted">Inicia sesión para ver los datos de la API.</p>
+
+      <form id="login-form" class="stack">
+        <label>
+          Email
+          <input type="email" id="login-email" placeholder="tu@email.com" required autocomplete="username" />
+        </label>
+        <label>
+          Contraseña
+          <input type="password" id="login-password" placeholder="Tu contraseña" required autocomplete="current-password" />
+        </label>
+        <button type="submit" id="login-btn" class="btn primary"><span class="btn-label">Entrar</span></button>
+      </form>
+      <p class="hint">Demo: <code>admin@demo.com</code> / <code>admin1234</code></p>
+
+      <details class="register-box">
+        <summary>¿No tienes cuenta? Regístrate</summary>
+        <form id="register-form" class="stack">
+          <label>Nombre completo
+            <input type="text" id="reg-name" placeholder="Tu nombre" />
+          </label>
+          <label>Email
+            <input type="email" id="reg-email" placeholder="tu@email.com" required />
+          </label>
+          <label>Contraseña (mín. 8)
+            <input type="password" id="reg-password" minlength="8" required />
+          </label>
+          <button type="submit" id="register-btn" class="btn"><span class="btn-label">Crear cuenta</span></button>
+        </form>
+      </details>
+
+      <p id="login-error" class="error hidden" role="alert"></p>
+    </div>
+  </div>
+
+  <!-- ============ VISTA: APP ============ -->
+  <div id="app-view" class="app-shell hidden">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar" aria-label="Navegación principal">
+      <div class="sidebar__header">
+        <span class="brand">Ecommerce Panel</span>
+      </div>
+
+      <nav class="sidebar__nav" aria-label="Secciones del panel">
+        <p class="nav-group" id="nav-ops">Operación</p>
+        <button class="nav-item active" data-tab="resumen" aria-current="page">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span>Resumen</span>
+        </button>
+        <button class="nav-item" data-tab="products">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+          <span>Productos</span>
+        </button>
+        <button class="nav-item" data-tab="orders">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6M9 11h6"/></svg>
+          <span>Órdenes</span>
+        </button>
+
+        <p class="nav-group" id="nav-sys">Sistema</p>
+        <button class="nav-item admin-only" data-tab="analytics">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-6M22 20H2"/></svg>
+          <span>Analítica</span>
+        </button>
+        <button class="nav-item" data-tab="status">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+          <span>Estado</span>
+        </button>
+      </nav>
+
+      <div class="sidebar__footer">
+        <span id="health-badge" class="badge badge-warn" role="status" aria-live="polite">comprobando…</span>
+        <span id="user-info" class="muted"></span>
+        <button id="logout-btn" class="btn ghost">Salir</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="app-main">
+      <header class="app-header">
+        <button class="icon-btn nav-trigger" id="nav-trigger" aria-label="Abrir navegación" aria-controls="sidebar" aria-expanded="false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <nav class="breadcrumb" aria-label="Ruta de navegación">
+          <ol>
+            <li>Panel</li>
+            <li id="crumb-current" aria-current="page">Resumen</li>
+          </ol>
+        </nav>
+        <div class="app-header__actions">
+          <button id="search-trigger" class="search-trigger" aria-keyshortcuts="Control+K">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+            Buscar <kbd>Ctrl K</kbd>
+          </button>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- ---------- Resumen ---------- -->
+        <section id="tab-resumen" class="view" role="tabpanel" aria-label="Resumen">
+          <div class="page-head">
+            <div>
+              <h1>Resumen</h1>
+              <p class="muted page-sub">Datos en vivo desde <code>GET /products/</code> y <code>GET /orders/</code>.</p>
+            </div>
+          </div>
+          <div class="kpi-strip">
+            <div class="card kpi"><span class="kpi-label">Productos activos</span><span id="dash-products" class="kpi-value">–</span></div>
+            <div class="card kpi"><span class="kpi-label">Unidades en stock</span><span id="dash-units" class="kpi-value">–</span></div>
+            <div class="card kpi"><span class="kpi-label">Valor del inventario</span><span id="dash-inventory" class="kpi-value">–</span></div>
+            <div class="card kpi"><span class="kpi-label">Mis órdenes</span><span id="dash-orders" class="kpi-value">–</span></div>
+            <div class="card kpi"><span class="kpi-label">Total gastado</span><span id="dash-spent" class="kpi-value">–</span></div>
+          </div>
+        </section>
+
+        <!-- ---------- Productos ---------- -->
+        <section id="tab-products" class="view hidden" role="tabpanel" aria-label="Productos">
+          <div class="page-head">
+            <div>
+              <h1>Productos</h1>
+              <p class="muted page-sub">Gestiona el catálogo.</p>
+            </div>
+            <div class="view-actions">
+              <label class="visually-hidden" for="product-search">Buscar productos por nombre</label>
+              <input type="search" id="product-search" placeholder="Buscar por nombre…" />
+              <button id="product-refresh" class="btn">Refrescar</button>
+            </div>
+          </div>
+
+          <form id="product-form" class="card form-inline admin-only">
+            <strong class="form-title">Nuevo producto</strong>
+            <input type="text" id="p-name" placeholder="Nombre" required />
+            <input type="text" id="p-desc" placeholder="Descripción" />
+            <input type="number" id="p-price" placeholder="Precio" min="0.01" step="0.01" required />
+            <input type="number" id="p-stock" placeholder="Stock" min="0" value="0" required />
+            <button type="submit" class="btn primary"><span class="btn-label">Crear</span></button>
+          </form>
+
+          <div id="products-list" class="grid"></div>
+
+          <div class="pagination">
+            <span id="products-count" class="muted" role="status" aria-live="polite"></span>
+            <div class="row">
+              <button id="products-prev" class="btn" type="button">Anterior</button>
+              <button id="products-next" class="btn" type="button">Siguiente</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- Órdenes ---------- -->
+        <section id="tab-orders" class="view hidden" role="tabpanel" aria-label="Mis órdenes">
+          <div class="page-head">
+            <div>
+              <h1>Órdenes</h1>
+              <p class="muted page-sub">Crea y revisa tus órdenes.</p>
+            </div>
+            <div class="view-actions">
+              <button id="orders-refresh" class="btn">Refrescar</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Crear orden</h3>
+            <div class="form-inline">
+              <label class="visually-hidden" for="order-product">Producto</label>
+              <select id="order-product" aria-label="Producto"></select>
+              <label class="visually-hidden" for="order-qty">Cantidad</label>
+              <input type="number" id="order-qty" value="1" min="1" aria-label="Cantidad" />
+              <button id="order-add-item" class="btn" type="button">Agregar</button>
+            </div>
+            <ul id="order-cart" class="cart"></ul>
+            <button id="order-submit" class="btn primary" type="button" disabled><span class="btn-label">Confirmar orden</span></button>
+          </div>
+
+          <div id="orders-list" class="stack"></div>
+        </section>
+
+        <!-- ---------- Analítica ---------- -->
+        <section id="tab-analytics" class="view hidden" role="tabpanel" aria-label="Analítica">
+          <div class="page-head">
+            <div>
+              <h1>Analítica</h1>
+              <p class="muted page-sub">Solo administradores.</p>
+            </div>
+          </div>
+          <div class="kpi-strip">
+            <div class="card kpi"><span class="kpi-label">Órdenes totales</span><span id="kpi-orders" class="kpi-value">–</span></div>
+            <div class="card kpi"><span class="kpi-label">Ingresos totales</span><span id="kpi-revenue" class="kpi-value">–</span></div>
+          </div>
+          <h3>Top productos</h3>
+          <div id="top-products" class="stack"></div>
+        </section>
+
+        <!-- ---------- Estado ---------- -->
+        <section id="tab-status" class="view hidden" role="tabpanel" aria-label="Estado del servicio">
+          <div class="page-head">
+            <div>
+              <h1>Estado</h1>
+              <p class="muted page-sub">Salud del servicio y métricas.</p>
+            </div>
+          </div>
+          <div class="grid grid--fit">
+            <div class="card"><span class="kpi-label">Liveness</span><div id="st-live">–</div></div>
+            <div class="card"><span class="kpi-label">Readiness (BD)</span><div id="st-ready">–</div></div>
+            <div class="card"><span class="kpi-label">Versión</span><div id="st-version">–</div></div>
+          </div>
+          <h3>Métricas (Prometheus)</h3>
+          <pre id="metrics-box" class="metrics" aria-live="polite">Pulsa "Actualizar métricas".</pre>
+          <div><button id="metrics-refresh" class="btn"><span class="btn-label">Actualizar métricas</span></button></div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span class="muted">Panel de datos · API FastAPI</span>
+        <span class="row">
+          <a href="/docs" target="_blank" rel="noopener">Swagger</a>
+          <a href="/redoc" target="_blank" rel="noopener">ReDoc</a>
+          <a href="/openapi.json" target="_blank" rel="noopener">openapi.json</a>
+          <a href="/metrics" target="_blank" rel="noopener">Métricas</a>
+        </span>
+      </footer>
+    </div>
+
+    <div class="scrim" id="scrim" hidden></div>
+  </div>
+
+  <!-- ============ TOASTS / LOADER ============ -->
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="false"></div>
+  <div id="loader" class="loader hidden" role="status" aria-live="polite">Cargando…</div>
+
+  <!-- ============ DIÁLOGO: EDITAR PRODUCTO ============ -->
+  <dialog id="edit-dialog" class="dialog" aria-labelledby="edit-title">
+    <form id="edit-form" class="stack">
+      <h3 id="edit-title">Editar producto</h3>
+      <input type="hidden" id="edit-id" />
+      <label>Nombre <input type="text" id="edit-name" required /></label>
+      <label>Descripción <input type="text" id="edit-desc" /></label>
+      <label>Precio <input type="number" id="edit-price" min="0.01" step="0.01" required /></label>
+      <label>Stock <input type="number" id="edit-stock" min="0" required /></label>
+      <div class="dialog-actions">
+        <button type="button" id="edit-cancel" class="btn ghost">Cancelar</button>
+        <button type="submit" id="edit-save" class="btn primary"><span class="btn-label">Guardar</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ DIÁLOGO: CONFIRMAR BORRADO ============ -->
+  <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-title">
+    <h3 id="confirm-title">Confirmar acción</h3>
+    <p id="confirm-message" class="muted"></p>
+    <div class="dialog-actions">
+      <button type="button" id="confirm-cancel" class="btn ghost">Cancelar</button>
+      <button type="button" id="confirm-ok" class="btn danger"><span class="btn-label">Eliminar</span></button>
+    </div>
+  </dialog>
+
+  <!-- ============ COMMAND PALETTE ============ -->
+  <dialog id="palette" class="palette" aria-label="Búsqueda rápida">
+    <input id="palette-input" class="palette__input" type="text" role="combobox"
+           aria-controls="palette-list" aria-expanded="true" aria-autocomplete="list"
+           placeholder="Buscar o ejecutar un comando…" autocomplete="off" />
+    <ul id="palette-list" class="palette__list" role="listbox"></ul>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

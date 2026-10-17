@@ -1,16 +1,21 @@
 services:
   api:
     build: .
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/ecommerce
-      JWT_SECRET: cambia-esto-en-produccion
+      # Toma JWT_SECRET del archivo .env (secreto largo). Si no existe, usa un
+      # valor por defecto solo para desarrollo.
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-only-for-local}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -19,6 +24,11 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   pgdata:

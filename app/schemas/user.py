@@ -12,6 +12,16 @@ class UserCreate(UserBase):
     # max_length=72 porque bcrypt ignora los bytes después del 72.
     password: str = Field(min_length=8, max_length=72)
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "jane@example.com",
+                "full_name": "Jane Doe",
+                "password": "supersecreto123",
+            }
+        }
+    )
+
 
 class UserRead(UserBase):
     model_config = ConfigDict(from_attributes=True)

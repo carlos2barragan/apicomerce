@@ -20,7 +20,7 @@ un proyecto de portafolio que pase el filtro de las vacantes junior.
 
 ```
 app/
-├── main.py        Punto de entrada. Monta la app y los routers.
+├── main.py        Punto de entrada. Monta la app, los routers y el panel /ui.
 ├── config.py      Variables de entorno (patrón 12-factor).
 ├── database.py    Motor de BD + sesión + dependencia get_db.
 ├── security.py    Hash de contraseñas y tokens JWT.
@@ -28,6 +28,8 @@ app/
 ├── models/        Tablas (SQLAlchemy).
 ├── schemas/       Validación de datos (Pydantic).
 └── routers/       Endpoints agrupados por recurso.
+frontend/          Panel web (HTML/CSS/JS) servido en /ui.
+docs/              Guías explicativas del proyecto.
 tests/             Pruebas automatizadas.
 seed.py            Carga datos de ejemplo.
 ```
@@ -60,8 +62,24 @@ Ahí puedes probar todos los endpoints sin escribir código cliente.
 ### Con Docker (incluye PostgreSQL)
 
 ```powershell
-docker compose up --build
+docker compose up --build -d
+docker compose exec api python seed.py   # datos de ejemplo
 ```
+
+### Panel web (ver los datos)
+
+Abre **http://127.0.0.1:8000/ui/** → panel con login, productos, órdenes,
+analítica (admin) y estado del servicio. Se sirve desde la misma API
+(carpeta `frontend/`), sin frameworks ni paso de build.
+
+## Documentación
+
+Guías paso a paso en [`docs/`](docs/README.md):
+
+- [01 · Docker](docs/01-docker.md) — el `Dockerfile` y el `docker-compose` explicados.
+- [02 · Backend](docs/02-backend.md) — arquitectura FastAPI, auth, caché, observabilidad.
+- [03 · Frontend](docs/03-frontend.md) — cómo está hecho el panel web.
+- [04 · Comandos](docs/04-comandos.md) — chuleta de comandos.
 
 ## Endpoints
 

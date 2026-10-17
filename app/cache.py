@@ -17,6 +17,11 @@ from app.config import settings
 
 logger = logging.getLogger("app.cache")
 
+# Prefijo de las claves de caché del recurso productos.
+# Se centraliza aquí para que cualquier módulo que modifique productos
+# (por ejemplo, al crear una orden y descontar stock) pueda invalidarla.
+PRODUCTS_CACHE_PREFIX = "products:"
+
 try:
     import redis
 except ImportError:  # pragma: no cover

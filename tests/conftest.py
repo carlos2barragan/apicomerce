@@ -13,6 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.cache import cache
 from app.database import Base, get_db
 from app.main import app
 
@@ -22,6 +23,14 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache() -> Generator[None, None, None]:
+    """Aísla el estado global de la caché entre tests."""
+    cache.delete_prefix("")
+    yield
+    cache.delete_prefix("")
 
 
 @pytest.fixture()

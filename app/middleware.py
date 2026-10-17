@@ -18,6 +18,16 @@ logger = logging.getLogger("app.request")
 _EXEMPT_PREFIXES = ("/health", "/metrics")
 
 
+def _route_template(request: Request) -> str:
+    """Plantilla de ruta resuelta (p. ej. /orders/{id}) para evitar cardinalidad.
+
+    Debe leerse DESPUÉS de `call_next`, cuando el router ya resolvió la ruta.
+    Si la petición no casó con ninguna ruta, devuelve un valor acotado.
+    """
+    route = request.scope.get("route")
+    return getattr(route, "path", None) or "unmatched"
+
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Asigna un id único a cada petición, mide su duración y la registra."""
 
@@ -29,7 +39,9 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             response = await call_next(request)
         except Exception:
             duration_ms = (time.perf_counter() - start) * 1000
-            REQUEST_COUNT.labels(request.method, request.url.path, "500").inc()
+            REQUEST_COUNT.labels(
+                request.method, _route_template(request), "500"
+            ).inc()
             logger.exception(
                 "%s %s -> 500 (%.1f ms)",
                 request.method,
@@ -40,12 +52,11 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             raise
 
         duration_ms = (time.perf_counter() - start) * 1000
+        route_path = _route_template(request)
         REQUEST_COUNT.labels(
-            request.method, request.url.path, str(response.status_code)
+            request.method, route_path, str(response.status_code)
         ).inc()
-        REQUEST_LATENCY.labels(request.method, request.url.path).observe(
-            duration_ms / 1000
-        )
+        REQUEST_LATENCY.labels(request.method, route_path).observe(duration_ms / 1000)
 
         response.headers["X-Request-ID"] = request_id
         response.headers["X-Process-Time-ms"] = f"{duration_ms:.1f}"

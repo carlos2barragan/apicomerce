@@ -14,11 +14,21 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_admin
 from app.models import Order, OrderItem, Product, User
+from app.schemas.common import ErrorResponse
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
-@router.get("/summary")
+@router.get(
+    "/summary",
+    summary="Resumen de ventas (solo admin)",
+    description=(
+        "Agregaciones SQL: número de órdenes, ingresos totales y top 5 de "
+        "productos más vendidos. Es la base ideal para exponer *tools* a un "
+        "agente LLM."
+    ),
+    responses={403: {"model": ErrorResponse, "description": "Se requiere rol de administrador"}},
+)
 def sales_summary(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_admin),
@@ -38,7 +48,8 @@ def sales_summary(
 
     return {
         "total_orders": int(total_orders),
-        "total_revenue": float(total_revenue),
+        # Se serializa como string para no perder precisión (float redondea dinero).
+        "total_revenue": str(total_revenue),
         "top_products": [
             {"name": name, "units_sold": int(units)} for name, units in top_rows
         ],
